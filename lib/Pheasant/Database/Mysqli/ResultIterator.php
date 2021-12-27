@@ -10,71 +10,69 @@ class ResultIterator implements \SeekableIterator, \Countable
     private $_hydrator;
 
     /**
-    * Constructor
-    * @param MySQLi_Result $result
-    */
+     * Constructor.
+     *
+     * @param MySQLi_Result $result
+     */
     public function __construct($result)
     {
         $this->_result = $result;
     }
 
     /**
-    * Destructor
-    * Frees the Result object
-    */
+     * Destructor
+     * Frees the Result object.
+     */
     public function __destruct()
     {
         $this->_result->free();
     }
 
     /**
-     * Sets a hydrator
+     * Sets a hydrator.
      */
-    public function setHydrator($callback)
+    public function setHydrator($callback): void
     {
         $this->_hydrator = $callback;
     }
 
     /**
-    * Rewinds the internal pointer
-    */
-    public function rewind()
+     * Rewinds the internal pointer.
+     */
+    public function rewind(): void
     {
         $this->seek(0);
     }
 
     /**
-    * Moves the internal pointer one step forward
-    */
-    public function next()
+     * Moves the internal pointer one step forward.
+     */
+    public function next(): void
     {
         $this->_currentRow = $this->_fetch();
         $this->_position = ++$this->_position;
     }
 
     /**
-    * Returns true if the current position is valid, false otherwise.
-    * @return bool
-    */
-    public function valid()
+     * Returns true if the current position is valid, false otherwise.
+     */
+    public function valid(): bool
     {
         return $this->_position < $this->_result->num_rows;
     }
 
     /**
-    * Returns the row that matches the current position
-    * @return array
-    */
-    public function current()
+     * Returns the row that matches the current position.
+     */
+    public function current(): mixed
     {
         return $this->_currentRow;
     }
 
     /**
-    * Returns the current position
-    * @return int
-    */
-    public function key()
+     * Returns the current position.
+     */
+    public function key(): int
     {
         return $this->_position;
     }
@@ -82,15 +80,16 @@ class ResultIterator implements \SeekableIterator, \Countable
     /**
      * Seeks to a particular position in the result, offset is from 0.
      */
-    public function seek($position)
+    public function seek($position): void
     {
         if ($position < 0) {
             throw new \OutOfBoundsException("Unable to seek to negative offset $position");
         }
 
         if ($this->_position !== $position) {
-            if(($count = $this->_result->num_rows) && ($position > ($count-1)))
+            if (($count = $this->_result->num_rows) && ($position > ($count - 1))) {
                 throw new \OutOfBoundsException("Unable to seek to offset $position");
+            }
 
             if ($count) {
                 $this->_result->data_seek($this->_position = $position);
@@ -102,15 +101,15 @@ class ResultIterator implements \SeekableIterator, \Countable
     }
 
     /**
-     * Returns the number of rows in the result
+     * Returns the number of rows in the result.
      */
-    public function count()
+    public function count(): int
     {
         return $this->_result->num_rows;
     }
 
     /**
-     * Template for fetching the array
+     * Template for fetching the array.
      */
     private function _fetch()
     {
@@ -120,7 +119,7 @@ class ResultIterator implements \SeekableIterator, \Countable
             ;
     }
 
-    public function toArray()
+    public function toArray(): array
     {
         return iterator_to_array($this);
     }

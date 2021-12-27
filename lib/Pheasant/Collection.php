@@ -2,20 +2,19 @@
 
 namespace Pheasant;
 
-use \Pheasant;
-use \Pheasant\Query\QueryIterator;
+use Pheasant\Query\QueryIterator;
+use Traversable;
 
 class Collection implements \IteratorAggregate, \Countable, \ArrayAccess
 {
-    private
-        $_query,
-        $_iterator,
-        $_scopes,
-        $_add=false,
-        $_readonly=false,
-        $_schema,
-        $_count,
-        $_includes=array()
+    private $_query;
+    private $_iterator;
+    private $_scopes;
+    private $_add = false;
+    private $_readonly = false;
+    private $_schema;
+    private $_count;
+    private $_includes = []
         ;
 
     /**
@@ -23,25 +22,25 @@ class Collection implements \IteratorAggregate, \Countable, \ArrayAccess
      * @param $query Query the query object
      * @param $add Closure a closure to call when an object is appended
      */
-    public function __construct($class, $query, $add=false)
+    public function __construct($class, $query, $add = false)
     {
         $this->_query = $query;
         $this->_add = $add;
         $this->_schema = $schema = $class::schema();
-        $this->_iterator = new QueryIterator($this->_query, array($this,'hydrate'));
+        $this->_iterator = new QueryIterator($this->_query, [$this, 'hydrate']);
         $this->_scopes = $class::scopes();
     }
 
     /**
-     * Hydrates a row to a DomainObject
+     * Hydrates a row to a DomainObject.
      */
     public function hydrate($row)
     {
         $hydrated = $this->_schema->hydrate($row);
 
         // apply any eager-loaded includes
-        foreach($this->_includes as $prop=>$includer) {
-            $hydrated->override($prop, function($prop, $obj) use($includer) {
+        foreach ($this->_includes as $prop => $includer) {
+            $hydrated->override($prop, function ($prop, $obj) use ($includer) {
                 return $includer->get($obj, $prop);
             });
         }
@@ -50,7 +49,8 @@ class Collection implements \IteratorAggregate, \Countable, \ArrayAccess
     }
 
     /**
-     * Return one and one only object from a collection
+     * Return one and one only object from a collection.
+     *
      * @throws ConstraintException if there are zero or >1 objects
      */
     public function one()
@@ -60,7 +60,7 @@ class Collection implements \IteratorAggregate, \Countable, \ArrayAccess
         // execute after the query so we save a query
         $count = $this->count();
         if ($count === 0) {
-            throw new NotFoundException("Expected 1 element, found 0");
+            throw new NotFoundException('Expected 1 element, found 0');
         } elseif ($count > 1) {
             throw new ConstraintException("Expected only 1 element, found $count");
         }
@@ -70,18 +70,20 @@ class Collection implements \IteratorAggregate, \Countable, \ArrayAccess
 
     public function last()
     {
-        $last = $this->count()-1;
+        $last = $this->count() - 1;
 
-        if(!$this->offsetExists($last))
-            throw new NotFoundException("No last element exist");
+        if (!$this->offsetExists($last)) {
+            throw new NotFoundException('No last element exist');
+        }
 
         return $this->offsetGet($last);
     }
 
     public function first()
     {
-        if(!$this->offsetExists(0))
-            throw new NotFoundException("No first element exist");
+        if (!$this->offsetExists(0)) {
+            throw new NotFoundException('No first element exist');
+        }
 
         return $this->offsetGet(0);
     }
@@ -92,10 +94,11 @@ class Collection implements \IteratorAggregate, \Countable, \ArrayAccess
     }
 
     /**
-     * Adds a filter to the collection
+     * Adds a filter to the collection.
+     *
      * @chainable
      */
-    public function filter($sql, $params=array())
+    public function filter($sql, $params = [])
     {
         $this->_queryForWrite()->andWhere($sql, $params);
 
@@ -103,20 +106,23 @@ class Collection implements \IteratorAggregate, \Countable, \ArrayAccess
     }
 
     /**
-     * Orders the collection
+     * Orders the collection.
+     *
      * @chainable
+     *
      * @deprecated
      */
-    public function order($sql, $params=array())
+    public function order($sql, $params = [])
     {
         return $this->orderBy($sql, $params);
     }
 
     /**
-     * Orders the collection
+     * Orders the collection.
+     *
      * @chainable
      */
-    public function orderBy($sql, $params=array())
+    public function orderBy($sql, $params = [])
     {
         $this->_queryForWrite()->orderBy($sql, $params);
 
@@ -124,10 +130,11 @@ class Collection implements \IteratorAggregate, \Countable, \ArrayAccess
     }
 
     /**
-     * Restricts the number of rows to return
+     * Restricts the number of rows to return.
+     *
      * @chainable
      */
-    public function limit($rows, $offset=0)
+    public function limit($rows, $offset = 0)
     {
         $this->_queryForWrite()->limit($rows, $offset);
 
@@ -135,18 +142,20 @@ class Collection implements \IteratorAggregate, \Countable, \ArrayAccess
     }
 
     /**
-     * Counts the number or results in the query
+     * Counts the number or results in the query.
      */
-    public function count()
+    public function count(): int
     {
-        if(!isset($this->_count))
+        if (!isset($this->_count)) {
             $this->_count = $this->_iterator->count();
+        }
 
         return $this->_count;
     }
 
     /**
-     * Selects only particular fields
+     * Selects only particular fields.
+     *
      * @chainable
      */
     public function select($fields)
@@ -157,7 +166,8 @@ class Collection implements \IteratorAggregate, \Countable, \ArrayAccess
     }
 
     /**
-     * Reduces a collection down to a single column
+     * Reduces a collection down to a single column.
+     *
      * @chainable
      */
     public function column($field)
@@ -170,6 +180,7 @@ class Collection implements \IteratorAggregate, \Countable, \ArrayAccess
     /**
      * Creates the passed params as a domain object if there are no
      * results in the collection.
+     *
      * @param $args array an array to be passed to the constructor via call_user_func_array
      * @chainable
      */
@@ -177,17 +188,19 @@ class Collection implements \IteratorAggregate, \Countable, \ArrayAccess
     {
         $query = clone $this->_queryForWrite();
 
-        if(!$query->count())
+        if (!$query->count()) {
             $this->_schema->newInstance(func_get_args())->save();
+        }
 
         return $this;
     }
 
     /**
-     * Adds a locking clause to the query
+     * Adds a locking clause to the query.
+     *
      * @chainable
      */
-    public function lock($clause=null)
+    public function lock($clause = null)
     {
         $this->_queryForWrite()->lock($clause);
 
@@ -196,21 +209,25 @@ class Collection implements \IteratorAggregate, \Countable, \ArrayAccess
 
     /**
      * Applies a callback to all objects in Collection, saves them if
-     * the object has changed
+     * the object has changed.
+     *
      * @chainable
      */
     public function save($callback)
     {
         foreach ($this as $object) {
             call_user_func($callback, $object);
-            if($object->changes()) $object->save();
+            if ($object->changes()) {
+                $object->save();
+            }
         }
 
         return $this;
     }
 
     /**
-     * Delete all objects in a collection
+     * Delete all objects in a collection.
+     *
      * @chainable
      */
     public function delete()
@@ -224,9 +241,9 @@ class Collection implements \IteratorAggregate, \Countable, \ArrayAccess
     }
 
     /**
-     * Returns an iterator
+     * Returns an iterator.
      */
-    public function getIterator()
+    public function getIterator(): Traversable
     {
         $this->_readonly = true;
 
@@ -234,15 +251,15 @@ class Collection implements \IteratorAggregate, \Countable, \ArrayAccess
     }
 
     /**
-     * Filter function when called as a function
+     * Filter function when called as a function.
      */
-    public function __invoke($sql, $params=array())
+    public function __invoke($sql, $params = [])
     {
         return $this->filter($sql, $params);
     }
 
     /**
-     * Gets the underlying query object
+     * Gets the underlying query object.
      */
     public function query()
     {
@@ -251,8 +268,9 @@ class Collection implements \IteratorAggregate, \Countable, \ArrayAccess
 
     private function _queryForWrite()
     {
-        if($this->_readonly)
-            throw new Exception("Collection is read-only during iteration");
+        if ($this->_readonly) {
+            throw new Exception('Collection is read-only during iteration');
+        }
 
         return $this->_query;
     }
@@ -261,13 +279,14 @@ class Collection implements \IteratorAggregate, \Countable, \ArrayAccess
      * Return only unique combinations of the domain object in the collection, e.g such
      * as when you want only the unique objects that are the result of a join on
      * conditions. Only columns from the primary object will be in the result.
+     *
      * @chainable
      */
     public function unique()
     {
         $this->_queryForWrite()
             ->distinct()
-            ->select($this->_schema->alias().".*")
+            ->select($this->_schema->alias().'.*')
             ;
 
         return $this;
@@ -275,14 +294,15 @@ class Collection implements \IteratorAggregate, \Countable, \ArrayAccess
 
     /**
      * Join other related objects into a collection for the purpose of filtering. Relationships
-     * is either a flat array of relationships (as defined in the object's schema) or a nested array
+     * is either a flat array of relationships (as defined in the object's schema) or a nested array.
+     *
      * @chainable
      */
-    public function join($rels, $joinType='inner')
+    public function join($rels, $joinType = 'inner')
     {
         $schemaAlias = $this->_schema->alias();
 
-        foreach (Relationship::normalizeMap($rels) as $alias=>$nested) {
+        foreach (Relationship::normalizeMap($rels) as $alias => $nested) {
             Relationship::addJoin($this->_queryForWrite(),
                 $schemaAlias, $this->_schema, $alias, $nested, $joinType);
         }
@@ -292,7 +312,8 @@ class Collection implements \IteratorAggregate, \Countable, \ArrayAccess
 
     /**
      * Groups domain objects particular columns, either a single column an array. This
-     * method is additive, it won't replace previous groupBy's
+     * method is additive, it won't replace previous groupBy's.
+     *
      * @chainable
      */
     public function groupBy($columns)
@@ -303,12 +324,13 @@ class Collection implements \IteratorAggregate, \Countable, \ArrayAccess
     }
 
     /**
-     * Eager load relationships to avoid the N+1 problem
+     * Eager load relationships to avoid the N+1 problem.
+     *
      * @chainable
      */
     public function includes($rels)
     {
-        foreach (Relationship::normalizeMap($rels) as $alias=>$nested) {
+        foreach (Relationship::normalizeMap($rels) as $alias => $nested) {
             $this->_includes[$alias] = new Relationships\Includer(
                 $this->_query, $this->_schema->relationship($alias), $nested
             );
@@ -318,12 +340,13 @@ class Collection implements \IteratorAggregate, \Countable, \ArrayAccess
     }
 
     /**
-     * Magic Method, used for scopes
+     * Magic Method, used for scopes.
      */
     public function __call($name, $args)
     {
-        if(isset($this->_scopes[$name])) {
+        if (isset($this->_scopes[$name])) {
             array_unshift($args, $this);
+
             return call_user_func_array($this->_scopes[$name], $args);
         }
 
@@ -333,63 +356,82 @@ class Collection implements \IteratorAggregate, \Countable, \ArrayAccess
     // ----------------------------------
     // helpers for common aggregate functions
 
-    public function aggregate($function, $fields=null)
+    public function aggregate($function, $fields = null)
     {
         $query = clone $this->_query;
 
         return $query->select(sprintf('%s(%s)', $function, $fields))->execute()->scalar();
     }
 
-    public function sum($field) { return $this->aggregate('SUM', $field); }
-    public function max($field) { return $this->aggregate('MAX', $field); }
-    public function min($field) { return $this->aggregate('MIN', $field); }
-    public function avg($field) { return $this->aggregate('AVG', $field); }
+    public function sum($field)
+    {
+        return $this->aggregate('SUM', $field);
+    }
+
+    public function max($field)
+    {
+        return $this->aggregate('MAX', $field);
+    }
+
+    public function min($field)
+    {
+        return $this->aggregate('MIN', $field);
+    }
+
+    public function avg($field)
+    {
+        return $this->aggregate('AVG', $field);
+    }
 
     // ----------------------------------
     // array access
 
-    public function offsetGet($offset)
+    public function offsetGet($offset): mixed
     {
         $this->_iterator->seek($offset);
 
         return $this->_iterator->current();
     }
 
-    public function offsetSet($offset, $value)
+    public function offsetSet($offset, $value): void
     {
-        if(empty($this->_add) && is_null($offset))
+        if (empty($this->_add) && is_null($offset)) {
             throw new \BadMethodCallException('Add not supported');
-        else if(is_null($offset))
-            return call_user_func($this->_add, $value);
-        else
+        } elseif (is_null($offset)) {
+            call_user_func($this->_add, $value);
+        } else {
             throw new \BadMethodCallException('Set not supported');
+        }
     }
 
-    public function offsetExists($offset)
+    public function offsetExists($offset): bool
     {
         try {
             $this->_iterator->seek($offset);
+
             return $this->_iterator->valid();
         } catch (\OutOfBoundsException $e) {
             return false;
         }
     }
 
-    public function offsetUnset($offset)
+    public function offsetUnset($offset): void
     {
-        if(!isset($this->_accessor))
+        if (!isset($this->_accessor)) {
             throw new \BadMethodCallException('Unset not supported');
+        }
     }
 
     /**
-    * String coercion. Returns a value like "[ClassName[pkcol1=foo,pkcol2=bar],ClassName[pkcol1=foo,pkcol2=bar],...]"
-    */
+     * String coercion. Returns a value like "[ClassName[pkcol1=foo,pkcol2=bar],ClassName[pkcol1=foo,pkcol2=bar],...]".
+     */
     public function __toString()
     {
         $itemsInCollection = [];
         foreach ($this->_iterator as $obj) {
-            $itemsInCollection[] = (string)$obj;
+            $itemsInCollection[] = (string) $obj;
         }
+
         return implode(',', $itemsInCollection);
     }
 }

@@ -2,9 +2,13 @@
 
 namespace Pheasant;
 
+use ArrayIterator;
+
 class Identity implements \IteratorAggregate
 {
-    private $_class, $_properties, $_object;
+    private $_class;
+    private $_properties;
+    private $_object;
 
     public function __construct($class, $properties, $object)
     {
@@ -13,17 +17,18 @@ class Identity implements \IteratorAggregate
         $this->_object = $object;
     }
 
-    public function getIterator()
+    public function getIterator(): ArrayIterator
     {
-        return new \ArrayIterator($this->_properties);
+        return new ArrayIterator($this->_properties);
     }
 
     public function toArray()
     {
-        $array = array();
+        $array = [];
 
-        foreach($this->_properties as $property)
+        foreach ($this->_properties as $property) {
             $array[$property->name] = $this->_object->get($property->name);
+        }
 
         return $array;
     }

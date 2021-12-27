@@ -54,7 +54,7 @@ class Connection
             $this->_selectedDatabase = $this->_dsn->database;
         }
 
-        $this->_debug = getenv('PHEASANT_DEBUG');
+        $this->_debug = true;
     }
 
     /**

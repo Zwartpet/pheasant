@@ -4,19 +4,19 @@ namespace Pheasant\Database\Mysqli;
 
 /**
  * Filter an iterator that returns associate arrays down to just one
- * of the keys
+ * of the keys.
  */
 class ColumnIterator extends \IteratorIterator
 {
     private $_column;
 
-    public function __construct($iterator, $column=null)
+    public function __construct($iterator, $column = null)
     {
         parent::__construct($iterator);
         $this->_column = $column;
     }
 
-    public function current()
+    public function current(): mixed
     {
         $row = parent::current();
         $keys = array_keys($row);
@@ -25,12 +25,12 @@ class ColumnIterator extends \IteratorIterator
         return $row[$column];
     }
 
-    public function toArray()
+    public function toArray(): array
     {
         return iterator_to_array($this);
     }
 
-    public function unique()
+    public function unique(): array
     {
         return array_unique($this->toArray());
     }

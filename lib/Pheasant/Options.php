@@ -2,30 +2,32 @@
 
 namespace Pheasant;
 
+use ArrayIterator;
+
 /**
  * An array-like structure that supports defaults and and numerically indexed keys.
- * Expands any options from int=>key to key=>$default
+ * Expands any options from int=>key to key=>$default.
  */
 class Options implements \IteratorAggregate
 {
-    private $_options=array();
+    private $_options = [];
 
     /**
-     * Constructor
+     * Constructor.
      */
-    public function __construct($options, $default=true)
+    public function __construct($options, $default = true)
     {
         $this->merge($options, $default);
     }
 
     /**
-     * Merges a new array into the options structure
+     * Merges a new array into the options structure.
      */
-    public function merge($array, $default=true)
+    public function merge($array, $default = true)
     {
-        $newarray = array();
+        $newarray = [];
 
-        foreach ($array as $key=>$value) {
+        foreach ($array as $key => $value) {
             $newKey = is_numeric($key) ? $value : $key;
             $newValue = is_numeric($key) ? true : $value;
             $newarray[$newKey] = $newValue;
@@ -39,9 +41,9 @@ class Options implements \IteratorAggregate
     /* (non-phpdoc)
      * @see IteratorAggregate
      */
-    public function getIterator()
+    public function getIterator(): ArrayIterator
     {
-        return new \ArrayIterator($this->_options);
+        return new ArrayIterator($this->_options);
     }
 
     public function __isset($key)
@@ -55,17 +57,18 @@ class Options implements \IteratorAggregate
     }
 
     /**
-     * Creates an options object from a flat string
+     * Creates an options object from a flat string.
+     *
      * @return Options
      */
-    public static function fromString($string, $default=true)
+    public static function fromString($string, $default = true)
     {
-        $array = array();
+        $array = [];
 
         foreach (preg_split('/\s+/', $string, -1, PREG_SPLIT_NO_EMPTY) as $token) {
-            $fragments = explode("=", $token);
+            $fragments = explode('=', $token);
             $value = isset($fragments[1])
-                ? trim($fragments[1],"' ") : $default;
+                ? trim($fragments[1], "' ") : $default;
 
             $array[$fragments[0]] = $value === 'null'
                 ? null : $value;
@@ -77,15 +80,15 @@ class Options implements \IteratorAggregate
     /**
      * Serializes the options to a string.
      */
-    public function toString($default=true)
+    public function toString($default = true)
     {
-        $options = array();
+        $options = [];
         $binder = new Database\Binder();
 
-        foreach ($this as $key=>$value) {
+        foreach ($this as $key => $value) {
             $options[] = ($value === $default)
                 ? $key
-                : sprintf("%s=%s", $key, urlencode($value))
+                : sprintf('%s=%s', $key, urlencode($value))
                 ;
         }
 
@@ -93,7 +96,7 @@ class Options implements \IteratorAggregate
     }
 
     /**
-     * Convert either a null, a string or an array into an Option
+     * Convert either a null, a string or an array into an Option.
      */
     public static function coerce($from)
     {
@@ -104,7 +107,7 @@ class Options implements \IteratorAggregate
         } elseif ($from instanceof Options) {
             return $from;
         } else {
-            throw new \InvalidArgumentException("Unable to coerce provided type");
+            throw new \InvalidArgumentException('Unable to coerce provided type');
         }
     }
 }

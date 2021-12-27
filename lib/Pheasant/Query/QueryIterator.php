@@ -1,10 +1,9 @@
 <?php
 
 namespace Pheasant\Query;
-use \Pheasant\Pheasant;
 
 /**
- * An iterator that lazily executes a query, hydrating as it goes
+ * An iterator that lazily executes a query, hydrating as it goes.
  */
 class QueryIterator implements \SeekableIterator, \Countable
 {
@@ -12,21 +11,23 @@ class QueryIterator implements \SeekableIterator, \Countable
     private $_hydrator;
     private $_iterator;
     private $_resultSet;
-    private $_before=array();
+    private $_before = [];
 
     /**
-     * Constructor
+     * Constructor.
+     *
      * @param object An instance of Query
      * @param closure A closure that takes a row and returns an object
      */
-    public function __construct($query, $hydrator=null)
+    public function __construct($query, $hydrator = null)
     {
         $this->_query = $query;
         $this->_hydrator = $hydrator;
     }
 
     /**
-     * Sets a hydrator to be used
+     * Sets a hydrator to be used.
+     *
      * @param closure A closure that takes a row and returns an object
      * @chainable
      */
@@ -38,18 +39,19 @@ class QueryIterator implements \SeekableIterator, \Countable
     }
 
     /**
-     * Add a callback to be called with the query before it's executed
+     * Add a callback to be called with the query before it's executed.
+     *
      * @chainable
      */
     public function before($callback)
     {
-        $this->_before []= $callback;
+        $this->_before[] = $callback;
 
         return $this;
     }
 
     /**
-     * Returns the query result set iterator, executing the query if needed
+     * Returns the query result set iterator, executing the query if needed.
      */
     private function _resultSet()
     {
@@ -64,55 +66,55 @@ class QueryIterator implements \SeekableIterator, \Countable
     }
 
     /**
-     * Returns the delegate iterator from the resultset
+     * Returns the delegate iterator from the resultset.
      */
     private function _iterator()
     {
-        if(!isset($this->_iterator))
+        if (!isset($this->_iterator)) {
             $this->_iterator = $this->_resultSet()->getIterator();
+        }
 
         return $this->_iterator;
     }
 
     /**
-    * Rewinds the internal pointer
-    */
-    public function rewind()
+     * Rewinds the internal pointer.
+     */
+    public function rewind(): void
     {
-        return $this->_iterator()->rewind();
+        $this->_iterator()->rewind();
     }
 
     /**
-    * Moves the internal pointer one step forward
-    */
-    public function next()
+     * Moves the internal pointer one step forward.
+     */
+    public function next(): void
     {
-        return $this->_iterator()->next();
+        $this->_iterator()->next();
     }
 
     /**
-    * Returns true if the current position is valid, false otherwise.
-    * @return bool
-    */
-    public function valid()
+     * Returns true if the current position is valid, false otherwise.
+     */
+    public function valid(): bool
     {
         return $this->_iterator()->valid();
     }
 
     /**
-    * Returns the row that matches the current position
-    * @return array
-    */
-    public function current()
+     * Returns the row that matches the current position.
+     *
+     * @return array
+     */
+    public function current(): mixed
     {
         return $this->_hydrate($this->_iterator()->current());
     }
 
     /**
-    * Returns the current position
-    * @return int
-    */
-    public function key()
+     * Returns the current position.
+     */
+    public function key(): int
     {
         return $this->_iterator()->key();
     }
@@ -120,21 +122,21 @@ class QueryIterator implements \SeekableIterator, \Countable
     /**
      * Seeks to a particular position in the result. Offset is from 0.
      */
-    public function seek($position)
+    public function seek($position): void
     {
-        return $this->_iterator()->seek($position);
+        $this->_iterator()->seek($position);
     }
 
     /**
-     * Counts the number or results in the query
+     * Counts the number or results in the query.
      */
-    public function count()
+    public function count(): int
     {
         return $this->_query->count();
     }
 
     /**
-     * Hydrates a row into an object
+     * Hydrates a row into an object.
      */
     private function _hydrate($row)
     {
