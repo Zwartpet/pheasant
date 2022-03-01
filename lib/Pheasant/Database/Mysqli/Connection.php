@@ -132,7 +132,7 @@ class Connection
             $this->_link->options(MYSQLI_INIT_COMMAND, "SET SESSION sql_mode = '{$sqlMode}'");
             $this->_link->options(MYSQLI_OPT_CONNECT_TIMEOUT, 5);
 
-            $flags = null;
+            $flags = 0;
 
             if ($this->_ssl_key || $this->_ssl_cert || $this->_ssl_ca) {
                 $this->_link->ssl_set($this->_ssl_key, $this->_ssl_cert, $this->_ssl_ca, $this->_ssl_capath, $this->_ssl_cipher);
